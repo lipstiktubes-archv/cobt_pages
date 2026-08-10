@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex">
+  <meta name="referrer" content="no-referrer">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' https://cdn.jsdelivr.net; font-src https://cdn.jsdelivr.net data:; connect-src 'self'; img-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <title>ConnectBetween</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.18.0/dist/katex.min.css" crossorigin="anonymous">
+  <link rel="stylesheet" href="./style.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.18.0/dist/katex.min.js" crossorigin="anonymous"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.18.0/dist/contrib/auto-render.min.js" crossorigin="anonymous"></script>
+  <script defer src="./app.js"></script>
+</head>
+<body>
+  <section id="lockScreen" class="lock-screen">
+    <div class="unlock-card">
+      <div class="eyebrow">ENCRYPTED SHARE</div>
+      <h1>ConnectBetween</h1>
+      <p>공유 문서는 암호화되어 있습니다. 암호는 이 페이지나 GitHub에 저장되지 않습니다.</p>
+      <form id="unlockForm" class="unlock-form">
+        <label for="passphrase">암호</label>
+        <div class="unlock-row">
+          <input id="passphrase" name="passphrase" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" required>
+          <button type="submit">열기</button>
+        </div>
+        <div id="unlockStatus" class="unlock-status" role="status" aria-live="polite"></div>
+      </form>
+      <p class="privacy-note">복호화는 현재 브라우저 안에서만 수행됩니다. 새로고침하면 다시 잠깁니다.</p>
+    </div>
+  </section>
+
+  <div id="appShell" class="app-shell hidden">
+    <aside id="sidebar" class="sidebar">
+      <div class="brand-row">
+        <div><div class="eyebrow">PRIVATE VIEW</div><h1 id="vaultTitle">ConnectBetween</h1></div>
+        <button id="themeToggle" class="icon-button" type="button" aria-label="테마 전환">◐</button>
+      </div>
+      <p class="sidebar-copy">암호화된 문서를 현재 브라우저에서만 표시합니다.</p>
+      <nav id="docNav" class="doc-nav" aria-label="문서 목록"></nav>
+      <div class="sidebar-footer"><span id="statusDot" class="status-dot ok"></span><span id="statusText">복호화됨</span></div>
+    </aside>
+
+    <main class="main-panel">
+      <header class="topbar">
+        <button id="menuToggle" class="mobile-menu" type="button">문서</button>
+        <div class="topbar-meta"><div id="docTitle" class="doc-title">문서</div><div id="docMeta" class="doc-meta"></div></div>
+        <div class="topbar-actions">
+          <button id="copyRaw" class="action-button" type="button">Markdown 전체 복사</button>
+          <button id="copyText" class="action-button secondary" type="button">표시 텍스트 복사</button>
+          <button id="lockButton" class="action-button danger" type="button">잠금</button>
+        </div>
+      </header>
+      <div class="content-wrap"><article id="content" class="markdown-body" aria-live="polite"></article></div>
+    </main>
+  </div>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+</body>
+</html>
