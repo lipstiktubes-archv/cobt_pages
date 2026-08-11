@@ -1,6 +1,7 @@
 (() => {
 'use strict';
-const enc=new TextEncoder(),dec=new TextDecoder(),AAD_TEXT='CONNECTBETWEEN_LINK_V2',AAD=enc.encode(AAD_TEXT);
+const enc=new TextEncoder(),dec=new TextDecoder();
+const AAD_V2='CONNECTBETWEEN_LINK_V2',AAD_V3='CONNECTBETWEEN_LINK_V3';
 let vault=null,currentMarkdown='',toastTimer=null; const el={};
 window.addEventListener('DOMContentLoaded',()=>{
   for(const id of ['lockScreen','lockMessage','unlockForm','secretKey','unlockStatus','appShell','sidebar','vaultTitle','docNav','docTitle','docMeta','content','copyRaw','copyText','lockButton','themeToggle','menuToggle','toast']) el[id]=document.getElementById(id);
@@ -19,15 +20,32 @@ function toggleTheme(){const n=document.documentElement.dataset.theme==='dark'?'
 function toast(msg){clearTimeout(toastTimer);el.toast.textContent=msg;el.toast.classList.add('show');toastTimer=setTimeout(()=>el.toast.classList.remove('show'),1500);}
 async function copy(text,msg){if(!text)return;try{await navigator.clipboard.writeText(text);toast(msg);}catch{toast('복사 권한을 사용할 수 없습니다.');}}
 function b64u(v){const n=v.replace(/-/g,'+').replace(/_/g,'/'),p=n+'='.repeat((4-n.length%4)%4),b=atob(p),a=new Uint8Array(b.length);for(let i=0;i<b.length;i++)a[i]=b.charCodeAt(i);return a;}
-async function importKey(secret){const raw=b64u(secret);if(raw.byteLength!==32)throw new Error('비밀키 길이가 올바르지 않습니다.');return crypto.subtle.importKey('raw',raw,{name:'AES-GCM'},false,['decrypt']);}
-function validEnv(e){if(!e||e.version!==2||e.cipher?.name!=='AES-GCM'||e.cipher?.keyLength!==256||e.cipher?.aad!==AAD_TEXT||!e.cipher?.iv||!e.ciphertext)throw new Error('지원하지 않거나 불완전한 vault입니다.');}
+async function importLegacyKey(secret){const raw=b64u(secret);if(raw.byteLength!==32)throw new Error('비밀키 길이가 올바르지 않습니다.');return crypto.subtle.importKey('raw',raw,{name:'AES-GCM'},false,['decrypt']);}
+async function deriveV3Key(secret,env){
+  const raw=b64u(secret);if(raw.byteLength!==32)throw new Error('비밀키 길이가 올바르지 않습니다.');
+  const r=env.recipient;if(!r||r.kty!=='EC'||r.crv!=='P-256'||!r.x||!r.y)throw new Error('수신 공개키가 올바르지 않습니다.');
+  const priv=await crypto.subtle.importKey('jwk',{kty:'EC',crv:'P-256',x:r.x,y:r.y,d:secret,ext:true,key_ops:['deriveBits']},{name:'ECDH',namedCurve:'P-256'},false,['deriveBits']);
+  const e=env.ephemeralPublic;if(!e||e.kty!=='EC'||e.crv!=='P-256'||!e.x||!e.y)throw new Error('임시 공개키가 올바르지 않습니다.');
+  const pub=await crypto.subtle.importKey('jwk',{kty:'EC',crv:'P-256',x:e.x,y:e.y,ext:true},{name:'ECDH',namedCurve:'P-256'},false,[]);
+  const shared=await crypto.subtle.deriveBits({name:'ECDH',public:pub},priv,256);
+  const hkdf=await crypto.subtle.importKey('raw',shared,'HKDF',false,['deriveKey']);
+  return crypto.subtle.deriveKey({name:'HKDF',hash:'SHA-256',salt:b64u(env.kdf.salt),info:enc.encode(env.kdf.info||AAD_V3)},hkdf,{name:'AES-GCM',length:256},false,['decrypt']);
+}
+function validEnv(e){
+  if(!e||![2,3].includes(e.version)||e.cipher?.name!=='AES-GCM'||e.cipher?.keyLength!==256||!e.cipher?.iv||!e.ciphertext)throw new Error('지원하지 않거나 불완전한 vault입니다.');
+  if(e.version===2&&e.cipher?.aad!==AAD_V2)throw new Error('Vault 식별자가 올바르지 않습니다.');
+  if(e.version===3&&(e.cipher?.aad!==AAD_V3||e.kdf?.name!=='HKDF'||e.kdf?.hash!=='SHA-256'||!e.kdf?.salt||!e.ephemeralPublic||!e.recipient))throw new Error('Vault v3 형식이 올바르지 않습니다.');
+}
 async function gunzip(bytes){if(typeof DecompressionStream==='undefined')throw new Error('이 브라우저는 압축 해제를 지원하지 않습니다. 최신 Chrome/Edge/Safari에서 열어 주십시오.');const stream=new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'));return new Uint8Array(await new Response(stream).arrayBuffer());}
+async function decryptEnvelope(secret,env){
+  if(env.version===2){const key=await importLegacyKey(secret);return new Uint8Array(await crypto.subtle.decrypt({name:'AES-GCM',iv:b64u(env.cipher.iv),additionalData:enc.encode(AAD_V2),tagLength:env.cipher.tagLength||128},key,b64u(env.ciphertext)));}
+  const key=await deriveV3Key(secret,env);return new Uint8Array(await crypto.subtle.decrypt({name:'AES-GCM',iv:b64u(env.cipher.iv),additionalData:enc.encode(AAD_V3),tagLength:env.cipher.tagLength||128},key,b64u(env.ciphertext)));
+}
 async function unlock(secret){const btn=el.unlockForm.querySelector('button[type="submit"]');btn.disabled=true;el.unlockStatus.textContent='암호화 문서를 여는 중입니다…';try{
   const r=await fetch('./vault.json',{cache:'no-store'});if(!r.ok)throw new Error('vault.json을 불러올 수 없습니다.');const env=await r.json();validEnv(env);
-  const key=await importKey(secret);let plain=new Uint8Array(await crypto.subtle.decrypt({name:'AES-GCM',iv:b64u(env.cipher.iv),additionalData:AAD,tagLength:env.cipher.tagLength||128},key,b64u(env.ciphertext)));
-  if(env.compression==='gzip')plain=await gunzip(plain);const p=JSON.parse(dec.decode(plain));if(p.version!==2||!Array.isArray(p.documents)||!p.documents.length)throw new Error('복호화된 문서 형식이 올바르지 않습니다.');
+  let plain=await decryptEnvelope(secret,env);if(env.compression==='gzip')plain=await gunzip(plain);const p=JSON.parse(dec.decode(plain));if(!Array.isArray(p.documents)||!p.documents.length)throw new Error('복호화된 문서 형식이 올바르지 않습니다.');
   vault=p;el.secretKey.value='';el.unlockStatus.textContent='';open();
-}catch(e){el.secretKey.value='';el.unlockStatus.textContent=e?.name==='OperationError'?'비밀키가 맞지 않거나 vault가 손상되었습니다.':e.message;}finally{btn.disabled=false;}}
+}catch(e){el.secretKey.value='';el.unlockStatus.textContent=e?.name==='OperationError'||e?.name==='DataError'?'비밀키가 맞지 않거나 vault가 손상되었습니다.':e.message;}finally{btn.disabled=false;}}
 function open(){el.vaultTitle.textContent=vault.title||'ConnectBetween';el.docNav.replaceChildren();for(const d of vault.documents){const b=document.createElement('button');b.type='button';b.className='doc-link';b.dataset.docId=d.id;const t=document.createElement('span');t.textContent=d.title;b.append(t);if(d.description){const s=document.createElement('small');s.textContent=d.description;b.append(s);}b.onclick=()=>render(d.id);el.docNav.append(b);}el.lockScreen.classList.add('hidden');el.appShell.classList.remove('hidden');render(vault.documents[0].id);}
 function lock(){vault=null;currentMarkdown='';el.content.replaceChildren();el.docNav.replaceChildren();el.appShell.classList.add('hidden');el.lockScreen.classList.remove('hidden');el.unlockStatus.textContent='다시 열려면 비밀 링크를 새로 열거나 비밀키를 입력하십시오.';}
 function render(id){const d=vault?.documents.find(x=>x.id===id);if(!d)return;currentMarkdown=d.markdown;el.docTitle.textContent=d.title;el.docMeta.textContent=vault.updatedAt?`vault updated: ${new Date(vault.updatedAt).toLocaleString()}`:'';document.querySelectorAll('.doc-link').forEach(b=>b.classList.toggle('active',b.dataset.docId===id));el.content.innerHTML=md(d.markdown);el.content.querySelectorAll('.code-copy').forEach(b=>b.onclick=()=>copy(b.closest('.code-shell').querySelector('code').textContent,'코드를 복사했습니다.'));el.sidebar.classList.remove('open');}
