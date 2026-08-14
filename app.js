@@ -41,10 +41,23 @@ async function decryptEnvelope(secret,env){
   if(env.version===2){const key=await importLegacyKey(secret);return new Uint8Array(await crypto.subtle.decrypt({name:'AES-GCM',iv:b64u(env.cipher.iv),additionalData:enc.encode(AAD_V2),tagLength:env.cipher.tagLength||128},key,b64u(env.ciphertext)));}
   const key=await deriveV3Key(secret,env);return new Uint8Array(await crypto.subtle.decrypt({name:'AES-GCM',iv:b64u(env.cipher.iv),additionalData:enc.encode(AAD_V3),tagLength:env.cipher.tagLength||128},key,b64u(env.ciphertext)));
 }
+async function getVaultFiles(){
+  try{
+    const r=await fetch('./vault-index.json',{cache:'no-store'});
+    if(r.ok){const x=await r.json();if(Array.isArray(x.vaults)&&x.vaults.length&&x.vaults.every(v=>typeof v==='string'&&/^[A-Za-z0-9._-]+\.json$/.test(v)))return x.vaults;}
+  }catch{}
+  return ['vault.json'];
+}
+async function loadPayload(secret,file){
+  const r=await fetch(`./${file}`,{cache:'no-store'});if(!r.ok)throw new Error(`${file}을 불러올 수 없습니다.`);const env=await r.json();validEnv(env);
+  let plain=await decryptEnvelope(secret,env);if(env.compression==='gzip')plain=await gunzip(plain);const p=JSON.parse(dec.decode(plain));if(!Array.isArray(p.documents)||!p.documents.length)throw new Error(`${file}의 복호화 문서 형식이 올바르지 않습니다.`);return p;
+}
 async function unlock(secret){const btn=el.unlockForm.querySelector('button[type="submit"]');btn.disabled=true;el.unlockStatus.textContent='암호화 문서를 여는 중입니다…';try{
-  const r=await fetch('./vault.json',{cache:'no-store'});if(!r.ok)throw new Error('vault.json을 불러올 수 없습니다.');const env=await r.json();validEnv(env);
-  let plain=await decryptEnvelope(secret,env);if(env.compression==='gzip')plain=await gunzip(plain);const p=JSON.parse(dec.decode(plain));if(!Array.isArray(p.documents)||!p.documents.length)throw new Error('복호화된 문서 형식이 올바르지 않습니다.');
-  vault=p;el.secretKey.value='';el.unlockStatus.textContent='';open();
+  const files=await getVaultFiles(),payloads=[];for(const file of files)payloads.push(await loadPayload(secret,file));
+  payloads.sort((a,b)=>(Date.parse(a.updatedAt||'1970-01-01')||0)-(Date.parse(b.updatedAt||'1970-01-01')||0));
+  const documents=new Map();for(const p of payloads)for(const d of p.documents)documents.set(d.id,d);const newest=payloads[payloads.length-1];
+  vault={version:3,title:newest.title||payloads[0].title||'ConnectBetween',updatedAt:newest.updatedAt||payloads[0].updatedAt||'',documents:[...documents.values()]};
+  el.secretKey.value='';el.unlockStatus.textContent='';open();
 }catch(e){el.secretKey.value='';el.unlockStatus.textContent=e?.name==='OperationError'||e?.name==='DataError'?'비밀키가 맞지 않거나 vault가 손상되었습니다.':e.message;}finally{btn.disabled=false;}}
 function open(){el.vaultTitle.textContent=vault.title||'ConnectBetween';el.docNav.replaceChildren();for(const d of vault.documents){const b=document.createElement('button');b.type='button';b.className='doc-link';b.dataset.docId=d.id;const t=document.createElement('span');t.textContent=d.title;b.append(t);if(d.description){const s=document.createElement('small');s.textContent=d.description;b.append(s);}b.onclick=()=>render(d.id);el.docNav.append(b);}el.lockScreen.classList.add('hidden');el.appShell.classList.remove('hidden');render(vault.documents[0].id);}
 function lock(){vault=null;currentMarkdown='';el.content.replaceChildren();el.docNav.replaceChildren();el.appShell.classList.add('hidden');el.lockScreen.classList.remove('hidden');el.unlockStatus.textContent='다시 열려면 비밀 링크를 새로 열거나 비밀키를 입력하십시오.';}
