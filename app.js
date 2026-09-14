@@ -54,9 +54,9 @@ async function loadPayload(secret,file){
 }
 async function unlock(secret){const btn=el.unlockForm.querySelector('button[type="submit"]');btn.disabled=true;el.unlockStatus.textContent='암호화 문서를 여는 중입니다…';try{
   const files=await getVaultFiles(),payloads=[];for(const file of files)payloads.push(await loadPayload(secret,file));
-  payloads.sort((a,b)=>(Date.parse(a.updatedAt||'1970-01-01')||0)-(Date.parse(b.updatedAt||'1970-01-01')||0));
-  const documents=new Map();for(const p of payloads)for(const d of p.documents)documents.set(d.id,d);const newest=payloads[payloads.length-1];
-  vault={version:3,title:newest.title||payloads[0].title||'ConnectBetween',updatedAt:newest.updatedAt||payloads[0].updatedAt||'',documents:[...documents.values()]};
+  payloads.sort((a,b)=>(Date.parse(b.updatedAt||'1970-01-01')||0)-(Date.parse(a.updatedAt||'1970-01-01')||0));
+  const documents=new Map();for(const p of payloads)for(const d of p.documents)if(!documents.has(d.id))documents.set(d.id,d);const newest=payloads[0];
+  vault={version:3,title:newest.title||payloads[payloads.length-1].title||'ConnectBetween',updatedAt:newest.updatedAt||payloads[payloads.length-1].updatedAt||'',documents:[...documents.values()]};
   el.secretKey.value='';el.unlockStatus.textContent='';open();
 }catch(e){el.secretKey.value='';el.unlockStatus.textContent=e?.name==='OperationError'||e?.name==='DataError'?'비밀키가 맞지 않거나 vault가 손상되었습니다.':e.message;}finally{btn.disabled=false;}}
 function open(){el.vaultTitle.textContent=vault.title||'ConnectBetween';el.docNav.replaceChildren();for(const d of vault.documents){const b=document.createElement('button');b.type='button';b.className='doc-link';b.dataset.docId=d.id;const t=document.createElement('span');t.textContent=d.title;b.append(t);if(d.description){const s=document.createElement('small');s.textContent=d.description;b.append(s);}b.onclick=()=>render(d.id);el.docNav.append(b);}el.lockScreen.classList.add('hidden');el.appShell.classList.remove('hidden');render(vault.documents[0].id);}
