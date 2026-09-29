@@ -53,7 +53,10 @@ async function loadPayload(secret,file){
   let plain=await decryptEnvelope(secret,env);if(env.compression==='gzip')plain=await gunzip(plain);const p=JSON.parse(dec.decode(plain));if(!Array.isArray(p.documents)||!p.documents.length)throw new Error(`${file}의 복호화 문서 형식이 올바르지 않습니다.`);return p;
 }
 async function unlock(secret){const btn=el.unlockForm.querySelector('button[type="submit"]');btn.disabled=true;el.unlockStatus.textContent='암호화 문서를 여는 중입니다…';try{
-  const files=await getVaultFiles(),payloads=[];for(const file of files)payloads.push(await loadPayload(secret,file));
+  const files=await getVaultFiles(),payloads=[],failures=[];
+  for(const file of files){try{payloads.push(await loadPayload(secret,file));}catch(error){failures.push(`${file}: ${error.message}`);}}
+  if(!payloads.length)throw new Error(failures[0]||'열 수 있는 vault가 없습니다.');
+  if(failures.length)console.warn('Skipped invalid vaults:',failures);
   payloads.sort((a,b)=>(Date.parse(b.updatedAt||'1970-01-01')||0)-(Date.parse(a.updatedAt||'1970-01-01')||0));
   const documents=new Map();for(const p of payloads)for(const d of p.documents)if(!documents.has(d.id))documents.set(d.id,d);const newest=payloads[0];
   vault={version:3,title:newest.title||payloads[payloads.length-1].title||'ConnectBetween',updatedAt:newest.updatedAt||payloads[payloads.length-1].updatedAt||'',documents:[...documents.values()]};
@@ -77,3 +80,4 @@ function md(markdown){const lines=String(markdown).replace(/\r\n?/g,'\n').split(
   const p=[t];i++;while(i<lines.length&&lines[i].trim()){const n=lines[i],nt=n.trim();if(/^```/.test(nt)||nt==='$$'||nt==='\\['||/^(#{1,6})\s+/.test(n)||nt.startsWith('> ')||/^\s*[-*+]\s+/.test(n)||/^\s*\d+\.\s+/.test(n)||(n.includes('|')&&i+1<lines.length&&divider(lines[i+1])))break;p.push(nt);i++;}o.push(`<p>${inline(p.join(' '))}</p>`);
 }return o.join('\n');}
 })();
+
