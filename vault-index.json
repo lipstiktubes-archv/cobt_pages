@@ -1,6 +1,7 @@
 {
   "version": 1,
   "vaults": [
+    "vault-dpd-400m-chunk-streaming-20261006.json",
     "vault-dpd-poly-nn-inverse-literature-survey-20261006.json",
     "vault-dpd-poly-nn-composite-inverse-conversation-20261001.json",
     "vault-dpd-20m-400m-wideband-transition-20260929.json",
