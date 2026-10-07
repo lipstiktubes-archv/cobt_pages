@@ -1,6 +1,7 @@
 {
   "version": 1,
   "vaults": [
+    "vault-dpd-pa-surrogate-chunk-review-20261007.json",
     "vault-dpd-ila-noniterative-residual-nn-20261006.json",
     "vault-dpd-400m-chunk-streaming-1966080-flow-20261006.json",
     "vault-dpd-400m-chunk-streaming-20261006.json",
