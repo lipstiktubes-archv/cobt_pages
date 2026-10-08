@@ -1,6 +1,7 @@
 {
   "version": 1,
   "vaults": [
+    "vault-dpd-400m-max-beta-normalization-review-20261008.json",
     "vault-dpd-400m-chunked-processing-implementation-20261008.json",
     "vault-dpd-400m-streaming-training-speed-20261008.json",
     "vault-dpd-400m-streaming-notebook-blocks-20261007.json",
