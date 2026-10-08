@@ -1,6 +1,7 @@
 {
   "version": 1,
   "vaults": [
+    "vault-dpd-400m-streaming-v2-full-e0bd56e-20261008.json",
     "vault-dpd-wideband-discussion-20261008.json",
     "vault-dpd-pa-digital-twin-multilevel-tf210-20261008.json",
     "vault-dpd-400m-streaming-notebook-full-20261008.json",
