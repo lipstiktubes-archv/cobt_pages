@@ -1,8 +1,8 @@
 {
   "version": 1,
   "vaults": [
-    "vault-dpd-400m-v4-iter-chunks-periodic.json",
     "vault-dpd-400m-chunked-v4-full.json",
+    "vault-dpd-400m-v4-iter-chunks-periodic.json",
     "vault-dpd-400m-streaming-v3-full.json",
     "vault-dpd-time-domain-adj-loss-arvtdnn-envelope-20261013.json",
     "vault-dpd-400m-streaming-cell-replacement-20261008.json",
