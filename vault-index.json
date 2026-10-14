@@ -1,6 +1,7 @@
 {
   "version": 1,
   "vaults": [
+    "vault-dpd-400m-v4-simplification-cell-plan-20261014.json",
     "vault-dpd-400m-chunked-v4-full.json",
     "vault-dpd-400m-v4-iter-chunks-periodic.json",
     "vault-dpd-400m-streaming-v3-full.json",
