@@ -111,3 +111,8 @@ button { cursor: pointer; }
   .action-button.secondary { display: none; }
   .markdown-body { font-size: 15px; }
 }
+
+
+/* Explicit optional Python ranges; colors retain contrast on the code background in both themes. */
+.code-shell code .code-optional-check { color: #ffd18a; background-color: #49351c; }
+.code-shell code .code-optional-display { color: #b9dcff; background-color: #193c57; }
