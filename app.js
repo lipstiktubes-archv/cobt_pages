@@ -67,10 +67,25 @@ function lock(){vault=null;currentMarkdown='';el.content.replaceChildren();el.do
 function render(id){const d=vault?.documents.find(x=>x.id===id);if(!d)return;currentMarkdown=d.markdown;el.docTitle.textContent=d.title;el.docMeta.textContent=vault.updatedAt?`vault updated: ${new Date(vault.updatedAt).toLocaleString()}`:'';document.querySelectorAll('.doc-link').forEach(b=>b.classList.toggle('active',b.dataset.docId===id));el.content.innerHTML=md(d.markdown);el.content.querySelectorAll('.code-copy').forEach(b=>b.onclick=()=>copy(b.closest('.code-shell').querySelector('code').textContent,'코드를 복사했습니다.'));el.sidebar.classList.remove('open');}
 function esc(v){return String(v).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;');}
 function inline(src){const codes=[],math=[];let s=String(src).replace(/\\\(([\s\S]*?)\\\)/g,(_,x)=>{const k=`CBM${math.length}X`;math.push(x);return k;}).replace(/`([^`]+)`/g,(_,x)=>{const k=`CBC${codes.length}X`;codes.push(x);return k;});s=esc(s).replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g,'<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>').replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>').replace(/~~([^~]+)~~/g,'<del>$1</del>');codes.forEach((x,i)=>s=s.replace(`CBC${i}X`,`<code>${esc(x)}</code>`));math.forEach((x,i)=>s=s.replace(`CBM${i}X`,`<span class="math-inline">${esc(x)}</span>`));return s;}
+// Explicit Python comment ranges only: all source is escaped before adding spans.
+// textContent stays byte-for-byte identical to the fenced code for the Copy button.
+function renderCode(source, lang){
+  if(!/^(python|py)$/i.test(lang.trim()))return esc(source);
+  let active=null;
+  return source.split('\n').map(line=>{
+    const start=line.match(/^\s*# \[(선택 검증|선택 표시) 시작\]/);
+    const end=line.match(/^\s*# \[(선택 검증|선택 표시) 끝\]/);
+    if(start)active=start[1];
+    const cls=active==='선택 검증'?'code-optional-check':active==='선택 표시'?'code-optional-display':null;
+    const html=cls?`<span class="${cls}">${esc(line)}</span>`:esc(line);
+    if(end&&end[1]===active)active=null;
+    return html;
+  }).join('\n');
+}
 function divider(l){const c=l.trim().replace(/^\|/,'').replace(/\|$/,'').split('|').map(x=>x.trim());return c.length&&c.every(x=>/^:?-{3,}:?$/.test(x));}
 function row(l){return l.trim().replace(/^\|/,'').replace(/\|$/,'').split('|').map(x=>x.trim());}
 function md(markdown){const lines=String(markdown).replace(/\r\n?/g,'\n').split('\n'),o=[];let i=0;while(i<lines.length){const l=lines[i],t=l.trim();
-  if(/^```/.test(t)){const lang=t.slice(3).trim()||'code',c=[];i++;while(i<lines.length&&!/^```\s*$/.test(lines[i].trim()))c.push(lines[i++]);if(i<lines.length)i++;o.push(`<div class="code-shell"><div class="code-toolbar"><span>${esc(lang)}</span><button class="code-copy" type="button">복사</button></div><pre><code>${esc(c.join('\n'))}</code></pre></div>`);continue;}
+  if(/^```/.test(t)){const lang=t.slice(3).trim()||'code',c=[];i++;while(i<lines.length&&!/^```\s*$/.test(lines[i].trim()))c.push(lines[i++]);if(i<lines.length)i++;o.push(`<div class="code-shell"><div class="code-toolbar"><span>${esc(lang)}</span><button class="code-copy" type="button">복사</button></div><pre><code>${renderCode(c.join('\n'),lang)}</code></pre></div>`);continue;}
   if(t==='$$'||t==='\\['){const end=t==='$$'?'$$':'\\]',a=[];i++;while(i<lines.length&&lines[i].trim()!==end)a.push(lines[i++]);if(i<lines.length)i++;o.push(`<div class="math-block"><pre>${esc(a.join('\n'))}</pre></div>`);continue;}
   if(!t){i++;continue;}const h=l.match(/^(#{1,6})\s+(.+)$/);if(h){const n=h[1].length;o.push(`<h${n}>${inline(h[2])}</h${n}>`);i++;continue;}
   if(t.startsWith('> ')){const q=[];while(i<lines.length&&lines[i].trim().startsWith('> '))q.push(lines[i++].trim().slice(2));o.push(`<blockquote>${q.map(inline).join('<br>')}</blockquote>`);continue;}
@@ -80,4 +95,5 @@ function md(markdown){const lines=String(markdown).replace(/\r\n?/g,'\n').split(
   const p=[t];i++;while(i<lines.length&&lines[i].trim()){const n=lines[i],nt=n.trim();if(/^```/.test(nt)||nt==='$$'||nt==='\\['||/^(#{1,6})\s+/.test(n)||nt.startsWith('> ')||/^\s*[-*+]\s+/.test(n)||/^\s*\d+\.\s+/.test(n)||(n.includes('|')&&i+1<lines.length&&divider(lines[i+1])))break;p.push(nt);i++;}o.push(`<p>${inline(p.join(' '))}</p>`);
 }return o.join('\n');}
 })();
+
 
