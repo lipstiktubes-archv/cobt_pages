@@ -1,6 +1,7 @@
 {
   "version": 1,
   "vaults": [
+    "vault-dpd-xxx-epoch-chunk-fixed-validation-20261015.json",
     "vault-dpd-wideband-training-literature-complete-20261015.json",
     "vault-dpd-400m-chunked-v4-1-full.json",
     "vault-dpd-400m-v4-1-revision-review-20261014.json",
