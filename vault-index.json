@@ -1,6 +1,7 @@
 {
   "version": 1,
   "vaults": [
+    "vault-dpd-chunk-computation-runtime-20261019.json",
     "vault-dpd-xxx-gpu-oom-diagnosis-20261016.json",
     "vault-dpd-xxx-chunk-local-early-stopping-20261016.json",
     "vault-dpd-xxx-chunk-length-halo-preallocated-full-20261016.json",
