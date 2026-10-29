@@ -1,6 +1,7 @@
 {
   "version": 1,
   "vaults": [
+    "vault-dpd-400m-neuron-50-hardware-feasibility-20261029.json",
     "vault-dpd-pa-multilevel-polynomial-forward-modeling-20261021.json",
     "vault-infra-orca-cloudflare-hermes-agentic-setup-20261020.json",
     "vault-dpd-chunk-computation-runtime-20261019.json",
