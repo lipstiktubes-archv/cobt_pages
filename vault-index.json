@@ -1,6 +1,7 @@
 {
   "version": 1,
   "vaults": [
+    "vault-dpd-polynomial-chunk-math-guide-20261029.json",
     "vault-dpd-400m-polynomial-chunk-math-qr-svd-20261029.json",
     "vault-dpd-400m-neuron-50-hardware-feasibility-20261029.json",
     "vault-dpd-pa-multilevel-polynomial-forward-modeling-20261021.json",
