@@ -1,6 +1,7 @@
 {
   "version": 1,
   "vaults": [
+    "vault-english-opic-typing-vs-speaking-cognitive-retrieval-training-20261030.json",
     "vault-dpd-polynomial-chunk-math-guide-20261029.json",
     "vault-dpd-400m-polynomial-chunk-math-qr-svd-20261029.json",
     "vault-dpd-400m-neuron-50-hardware-feasibility-20261029.json",
