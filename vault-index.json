@@ -1,6 +1,7 @@
 {
   "version": 1,
   "vaults": [
+    "vault-dpd-ilc-signal-diagnostics-and-linearization-research-20261127.json",
     "vault-dpd-ilc-400mhz-sample-rate-correction-bandwidth-20261124.json",
     "vault-dpd-rnn-transformer-attention-memory-literature-20261104.json",
     "vault-dpd-mp-gmp-volterra-feature-matrix-examples-20261102.json",
