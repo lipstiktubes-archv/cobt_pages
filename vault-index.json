@@ -1,6 +1,7 @@
 {
   "version": 1,
   "vaults": [
+    "vault-dpd-spsa-zeroth-order-linearization-research-20261127.json",
     "vault-dpd-ilc-outband-energy-cross-term-20261127.json",
     "vault-dpd-ilc-signal-diagnostics-and-linearization-research-20261127.json",
     "vault-dpd-ilc-400mhz-sample-rate-correction-bandwidth-20261124.json",
